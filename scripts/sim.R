@@ -16,6 +16,8 @@ dat  <- read.csv("../data/full_phenodat.csv")
 
 # Filter to Solanaceae
 dat <- dat[dat$Family == "Asteraceae", ] ## REPLACE
+matches <- intersect(dat$genus_species, tree$tip.label)
+dat <- dat[dat$genus_species %in% matches, ]
 dat$Haploid.Chrom.. <- as.numeric(dat$Haploid.Chrom..)
 dat <- dat[!is.na(dat$Haploid.Chrom..), ]
 
@@ -157,7 +159,7 @@ run_rep <- function(i) {
 }
 
 # --- Run in parallel ----------------------------------------------------------
-n_reps  <- 100   # adjust as needed
-n_cores <- 48    # adjust based on your machine
+n_reps  <- 1   # adjust as needed
+n_cores <- 1    # adjust based on your machine
 
 mclapply(1:n_reps, run_rep, mc.cores = n_cores)
