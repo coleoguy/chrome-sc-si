@@ -7,7 +7,7 @@ library(coda)
 # =========================
 # Config
 # =========================
-base_dir   <- "../results"
+base_dir   <- "../results/"
 dirs       <- c("aster_full","brass_full","sol_full","fab_full")
 fam_labels <- c("Asteraceae","Brassicaceae","Solanaceae","Fabaceae")
 
@@ -28,23 +28,26 @@ cols <- c(
 )
 
 # Store results per family
-res_list <- list()
-ci_list  <- list()
-props_all <- data.frame()
+res_list    <- list()
+ci_list     <- list()
+props_all   <- data.frame()
+tran12_list <- list()   # NEW: store tran12 samples per family
 
 # =========================
-# Loop over families: collect sampled Δ
+# Loop over families: collect sampled Δ and tran12
 # =========================
 for(i in 1:length(dirs)) {
-  family <- fam_labels[i]
+  family  <- fam_labels[i]
   res_dir <- file.path(base_dir, dirs[i])
-  files <- list.files(res_dir, pattern="_rep\\d+\\.csv$", full.names=TRUE)
+  files   <- list.files(res_dir, pattern="_rep\\d+\\.csv$", full.names=TRUE)
+  
   if(length(files) == 0) {
     cat("No files found for", family, "\n")
     next
   }
   
-  res <- data.frame()
+  res         <- data.frame()
+  tran12_vals <- numeric(0)  # NEW: to store sampled tran12 for this family
   
   for(f in files) {
     chain <- read.csv(f, check.names=FALSE)
@@ -56,6 +59,7 @@ for(i in 1:length(dirs)) {
     if(length(post_idx) < samples_per_run) next
     idx <- sample(post_idx, samples_per_run)
     
+    # Collect Δr for each param pair
     deltas <- data.frame(matrix(nrow=samples_per_run, ncol=0))
     for(pn in names(param_pairs)) {
       pp <- param_pairs[[pn]]
@@ -65,29 +69,52 @@ for(i in 1:length(dirs)) {
         deltas[[pn]] <- v1 - v2
       }
     }
+    
+    # NEW: collect tran12 samples
+    if ("tran12" %in% names(chain)) {
+      tran12_vals <- c(tran12_vals, as.numeric(chain[["tran12"]][idx]))
+    }
+    
     res <- rbind(res, deltas)
   }
   
+  # Drop all-NA columns
   res <- res[, colSums(!is.na(res)) > 0, drop=FALSE]
-  if(ncol(res) == 0) next
+  if(ncol(res) == 0 && length(tran12_vals) == 0) next
   
-  ci <- HPDinterval(as.mcmc(res))
-  props <- colMeans(res > 0, na.rm=TRUE)
+  if (ncol(res) > 0) {
+    ci    <- HPDinterval(as.mcmc(res))
+    props <- colMeans(res > 0, na.rm=TRUE)
+    
+    res_list[[family]] <- res
+    ci_list[[family]]  <- ci
+    
+    props_all <- rbind(props_all,
+                       data.frame(Family=family,
+                                  param=names(props),
+                                  p_delta_gt0=as.numeric(props)))
+  }
   
-  res_list[[family]] <- res
-  ci_list[[family]]  <- ci
-  
-  props_all <- rbind(props_all,
-                     data.frame(Family=family,
-                                param=names(props),
-                                p_delta_gt0=as.numeric(props)))
+  # NEW: save tran12 samples for this family
+  tran12_list[[family]] <- tran12_vals
   
   # Console summary
   cat("\nFamily:", family, "| Files processed:", length(files), "\n")
-  for(nm in colnames(res)) {
-    cat(sprintf("%-10s  n=%d,  P(Δ>0)=%.3f,  HPD=[%.5f, %.5f]\n",
-                nm, sum(!is.na(res[[nm]])), mean(res[[nm]] > 0, na.rm=TRUE),
-                ci[nm,1], ci[nm,2]))
+  
+  if (length(tran12_vals) > 0) {
+    cat(sprintf("  tran12      n=%d, mean=%.5f\n",
+                length(tran12_vals),
+                mean(tran12_vals, na.rm=TRUE)))
+  }
+  
+  if (ncol(res) > 0) {
+    for(nm in colnames(res)) {
+      cat(sprintf("%-10s  n=%d,  P(Δ>0)=%.3f,  HPD=[%.5f, %.5f]\n",
+                  nm,
+                  sum(!is.na(res[[nm]])),
+                  mean(res[[nm]] > 0, na.rm=TRUE),
+                  ci[nm,1], ci[nm,2]))
+    }
   }
 }
 
@@ -102,12 +129,12 @@ ci  <- ci_list[["Asteraceae"]]
 dens_list <- lapply(colnames(res), function(nm) density(res[[nm]], na.rm=TRUE))
 names(dens_list) <- colnames(res)
 
-y_max <- max(sapply(dens_list, function(d) max(d$y)))
+y_max    <- max(sapply(dens_list, function(d) max(d$y)))
 n_params <- ncol(res)
 
 # Open blank plotting window with fixed xlims
 plot(NA,
-     xlim=c(-0.04, 0.3),    # keep your manual xlims
+     xlim=c(-0.1, 0.2),    # keep your manual xlims
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Asteraceae",
      xlab=expression(Delta[r]~"rate statistic"),
@@ -140,7 +167,7 @@ ci  <- ci_list[["Fabaceae"]]
 dens_list <- lapply(colnames(res), function(nm) density(res[[nm]], na.rm=TRUE))
 names(dens_list) <- colnames(res)
 
-y_max <- max(sapply(dens_list, function(d) max(d$y)))
+y_max    <- max(sapply(dens_list, function(d) max(d$y)))
 n_params <- ncol(res)
 
 plot(NA,
@@ -173,7 +200,7 @@ ci  <- ci_list[["Brassicaceae"]]
 dens_list <- lapply(colnames(res), function(nm) density(res[[nm]], na.rm=TRUE))
 names(dens_list) <- colnames(res)
 
-y_max <- max(sapply(dens_list, function(d) max(d$y)))
+y_max    <- max(sapply(dens_list, function(d) max(d$y)))
 n_params <- ncol(res)
 
 plot(NA,
@@ -206,11 +233,11 @@ ci  <- ci_list[["Solanaceae"]]
 dens_list <- lapply(colnames(res), function(nm) density(res[[nm]], na.rm=TRUE))
 names(dens_list) <- colnames(res)
 
-y_max <- max(sapply(dens_list, function(d) max(d$y)))
+y_max    <- max(sapply(dens_list, function(d) max(d$y)))
 n_params <- ncol(res)
 
 plot(NA,
-     xlim=c(-0.013, 0.054),    # your manual xlim
+     xlim=c(-0.05, 0.054),    # your manual xlim
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Solanaceae",
      xlab=expression(Delta[r]~"rate statistic"),
@@ -240,6 +267,37 @@ mean_deltas <- data.frame()
 for (fam in fam_labels) {
   if (!is.null(res_list[[fam]])) {
     fam_means <- colMeans(res_list[[fam]], na.rm=TRUE)
+    fam_df <- data.frame(Family = fam,
+                         Transition = names(fam_means),
+                         MeanDeltaR = as.numeric(fam_means))
+    mean_deltas <- rbind(mean_deltas, fam_df)
+  }
+}
+
+print(mean_deltas)
+
+# =========================
+# Compute mean tran12 per family
+# =========================
+tran12_means <- data.frame()
+
+for (fam in fam_labels) {
+  vals <- tran12_list[[fam]]
+  if (!is.null(vals) && length(vals) > 0) {
+    fam_mean <- mean(vals, na.rm=TRUE)
+    tran12_means <- rbind(tran12_means,
+                          data.frame(Family = fam,
+                                     Mean_tran12 = fam_mean))
+  }
+}
+
+print(tran12_means)
+
+mean_deltas <- data.frame()
+
+for (fam in fam_labels) {
+  if (!is.null(res_list[[fam]])) {
+    fam_means <- colMeans(res_list[[fam]], na.rm=TRUE)
     fam_df <- data.frame(Family=fam,
                          Transition=names(fam_means),
                          MeanDeltaR=as.numeric(fam_means))
@@ -248,3 +306,4 @@ for (fam in fam_labels) {
 }
 
 print(mean_deltas)
+write.csv(mean_deltas, "../emp_means.csv")

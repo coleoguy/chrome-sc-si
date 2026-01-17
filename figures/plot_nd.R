@@ -7,7 +7,7 @@ library(coda)
 # =========================
 # Config
 # =========================
-base_dir   <- "../results"
+base_dir   <- "../../SI/pruned_res/"
 dirs       <- c("aster_nd","brass_nd","sol_nd","fab_nd")
 fam_labels <- c("Asteraceae","Brassicaceae","Solanaceae","Fabaceae")
 
@@ -146,7 +146,7 @@ ci  <- ci_list[["Brassicaceae"]]
 dens_list <- apply(res, 2, density, na.rm=TRUE)
 y_max <- max(sapply(dens_list, function(d) max(d$y)))
 
-plot(dens_list[[1]], xlim=c(-0.03,0.25),
+plot(dens_list[[1]], xlim=c(-0.03,0.2),
      ylim=c(-0.3*y_max, 1.05*y_max), main="Brassicaceae",
      xlab=expression(Delta[r]~"rate statistic"))
 abline(v=0, lty=2, lwd=2)
@@ -169,7 +169,7 @@ ci  <- ci_list[["Solanaceae"]]
 dens_list <- apply(res, 2, density, na.rm=TRUE)
 y_max <- max(sapply(dens_list, function(d) max(d$y)))
 
-plot(dens_list[[1]], xlim=c(-0.01,0.08),
+plot(dens_list[[1]], xlim=c(-0.05,0.08),
      ylim=c(-0.3*y_max, 1.05*y_max), main="Solanaceae",
      xlab=expression(Delta[r]~"rate statistic"))
 abline(v=0, lty=2, lwd=2)
@@ -183,3 +183,4 @@ for(i in 1:ncol(res)){
 }
 legend("topright", legend=colnames(res),
        fill=cols[colnames(res)], border=NA, bty="n")
+

@@ -4,23 +4,13 @@
 
 library(dplyr)
 
-emp_means <- data.frame(
-  Family     = c("Asteraceae","Asteraceae","Asteraceae","Asteraceae",
-                 "Brassicaceae","Brassicaceae","Brassicaceae","Brassicaceae",
-                 "Solanaceae","Solanaceae","Solanaceae","Solanaceae",
-                 "Fabaceae","Fabaceae","Fabaceae","Fabaceae"),
-  Transition = rep(c("fusion","fission","wgd","demi"), 4),
-  MeanDeltaR = c(0.107003455,-0.013485709,0.050621453,0.041571293, # obtained from observed results
-                 0.015702126,-0.003237852,0.065934740,0.026536725,
-                 0.024579227, 0.003737530,0.017753425,0.002414617,
-                 0.031, -0.004, 0.029, 0.018)
-)
+emp_means <- read.csv("emp_means_pruned.csv")
 
 fam_map <- list(
-  Asteraceae    = "../sim_results/aster/aster_neutral_chain_rep",
-  Brassicaceae  = "../sim_results/brass/brass_neutral_chain_rep",
-  Solanaceae    = "../sim_results/sol/sol_neutral_chain_rep",
-  Fabaceae      = "../sim_results/fab/fab_neutral_chain_rep"
+  Asteraceae    = "../pruned_sim/aster_sims/aster_neutral_chain_rep",
+  Brassicaceae  = "../pruned_sim/brass_sims/brass_neutral_chain_rep",
+  Solanaceae    = "../pruned_sim/sol_sims/sol_neutral_chain_rep",
+  Fabaceae      = "../pruned_sim/fab_sims/fab_neutral_chain_rep"
 )
 
 # Loop over families
