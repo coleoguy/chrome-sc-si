@@ -1,72 +1,84 @@
-# =============================
-# Neutral vs Empirical Δr (PDF-safe Δr + p-values)
-# =============================
+### Megan Copeland
+### Plot Simulation Results with folded null
 
+# load library
 library(dplyr)
 
+# read in mean delta r values from empirical data (see plot_full.r)
 emp_means <- read.csv("emp_means_pruned.csv")
 
-fam_map <- list(
-  Asteraceae    = "../pruned_sim/aster_sims/aster_neutral_chain_rep",
-  Brassicaceae  = "../pruned_sim/brass_sims/brass_neutral_chain_rep",
-  Solanaceae    = "../pruned_sim/sol_sims/sol_neutral_chain_rep",
-  Fabaceae      = "../pruned_sim/fab_sims/fab_neutral_chain_rep"
-)
+# get families and paths to thei results
+families <- list(
+  Asteraceae    = "../pruned.tr_sim/aster_sims/aster_neutral_chain_rep",
+  Brassicaceae  = "../pruned.tr_sim/brass_sims/brass_neutral_chain_rep",
+  Solanaceae    = "../pruned.tr_sim/sol_sims/sol_neutral_chain_rep",
+  Fabaceae      = "../pruned.tr_sim/fab_sims/fab_neutral_chain_rep")
 
-# Loop over families
-for (fam in names(fam_map)) {
+# loop over families
+for (i in 1:length(families)) {
   
-  cat("Processing:", fam, "\n")
+  # get current family name
+  curr_fam <- families[[i]]  
   rep_means <- list()
   
-  for (i in 1:100) {
-    file <- paste0(fam_map[[fam]], i, ".csv")
-    df <- read.csv(file, check.names = FALSE)
+  # loop over sim replicates
+  for (j in 1:100) {
+    # read file and toss out half of rows as burn in
+    df <- read.csv(paste0(curr_fam, j, ".csv"))
     n <- nrow(df)
-    df_post <- df[(n/2 + 1):n, ]
+    df_postburn <- df[(n/2 + 1):n, ]
     
-    # Δr calculation
+    # delta r calculation
     delta_df <- data.frame(
-      fusion  = df_post$desc1 - df_post$desc2,
-      fission = df_post$asc1  - df_post$asc2,
-      wgd     = df_post$pol1  - df_post$pol2,
-      demi    = df_post$dem1  - df_post$dem2
-    )
-    mns <- colMeans(delta_df, na.rm = TRUE)
-    rep_means[[i]] <- mns
+      fusion  = df_postburn$desc1 - df_postburn$desc2,
+      fission = df_postburn$asc1  - df_postburn$asc2,
+      wgd     = df_postburn$pol1  - df_postburn$pol2,
+      demi    = df_postburn$dem1  - df_postburn$dem2)
+    
+    # take mean of delta r
+    mns <- colMeans(delta_df)
+    rep_means[[j]] <- mns
   }
   
-  # Combine replicates
+  # rbind mean delta r from replicates, take absolute value of those (fold null)
   mean_df <- as.data.frame(do.call(rbind, rep_means))
   mean_df_abs <- as.data.frame(lapply(mean_df, abs))
-  emp_sub <- subset(emp_means, Family == fam)
+  
+  # get empirical mean for the current family
+  emp_sub <- emp_means[emp_means$Family == names(families)[1],]
   
   par(mfrow=c(2,2), mar=c(4,4,3,1))
   
-  for (col in names(mean_df_abs)) {
-    x <- mean_df_abs[[col]]
-    d <- density(x, na.rm=TRUE)
-    mean_val <- abs(emp_sub$MeanDeltaR[emp_sub$Transition == col])
+  # loop over transition parameters for the current family
+  for (k in 1:length(mean_df_abs)) {
+    # get the current parameter, grab values for that it, get density 
+    curr_param <- names(mean_df_abs)[k]
+    x <- mean_df_abs[[curr_param]]
+    dens <- density(x)
     
-    # Monte Carlo p-value
+    # take absolute value of the empirical mean delta r for that transition
+    mean_val <- abs(emp_sub$MeanDeltaR[emp_sub$Transition == curr_param])
+    
+    # calculate p-value
     r <- sum(x >= mean_val)
     n_sim <- length(x)
     pval <- (r + 1) / (n_sim + 1)
     
-    x_min <- min(d$x, mean_val, na.rm=TRUE)
-    x_max <- max(d$x, mean_val, na.rm=TRUE)
-    y_max <- max(d$y, na.rm=TRUE)
+    # get min and max values for plotting
+    x_min <- min(dens$x, mean_val)
+    x_max <- max(dens$x, mean_val)
+    y_max <- max(dens$y)
     
-    # Plot (PDF-safe Δr)
-    plot(d,
-         main = bquote(.(fam) ~ "|" * Delta * "r|" ~ .(col)),
+    # plot
+    plot(dens,
+         main = bquote(.(names(families)[i]) ~ "|" * Delta * "r|" ~ .(curr_param)),
          xlab = expression("|" * Delta * "r|"),
          ylab = "Density",
          type = "n",
          xlim = c(x_min, x_max),
          ylim = c(0, y_max * 1.2))
     
-    polygon(d, col = "lightblue", border = "black", lwd = 1.2)
+    polygon(dens, col = "lightblue", border = "black", lwd = 1.2)
     abline(v = mean_val, col = "red", lwd = 2)
     
     # p-value annotation (always top-left)
