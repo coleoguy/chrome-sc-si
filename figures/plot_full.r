@@ -8,7 +8,7 @@ library(coda)
 # Config
 # =========================
 base_dir   <- "../results/"
-dirs       <- c("aster_full","brass_full","sol_full","fab_full")
+dirs       <- c("aster","brass","sol","fab")
 fam_labels <- c("Asteraceae","Brassicaceae","Solanaceae","Fabaceae")
 
 samples_per_run <- 10   # rows to randomly sample after burn-in
@@ -292,6 +292,7 @@ for (fam in fam_labels) {
 }
 
 print(tran12_means)
+write.csv(tran12_means, "trans_means.csv", row.names = F)
 
 mean_deltas <- data.frame()
 
@@ -306,4 +307,4 @@ for (fam in fam_labels) {
 }
 
 print(mean_deltas)
-write.csv(mean_deltas, "../emp_means.csv")
+write.csv(mean_deltas, "../emp_means.csv", row.names = F)
