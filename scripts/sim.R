@@ -116,21 +116,13 @@ run_rep <- function(i) {
   rate_cols <- !(colnames(chain_unit) %in% c("i", "p"))
   chain_unit[, rate_cols] <- chain_unit[, rate_cols] / root_depth
   
-  # Δr calculation
-  delta_df <- data.frame(
-    fusion  = chain_unit$desc1 - chain_unit$desc2,
-    fission = chain_unit$asc1  - chain_unit$asc2,
-    wgd     = chain_unit$pol1  - chain_unit$pol2,
-    demi    = chain_unit$dem1  - chain_unit$dem2)
-  
   # save outputs
   write.csv(chain_unit, paste0("../results/aster_neutral_chain_rep", i, ".csv"), row.names = FALSE) ##REPLACE
-  write.csv(delta_df,  paste0("../results/aster_neutral_delta_rep", i, ".csv"), row.names = FALSE) ##REPLACE
-  
+
   # cleanup
   rm(tree_i, root_depth, neutral_trait, range_chr,
      state_df, state_mat, state_vec, lik0, lik,
-     pilot, w, chain_unit, delta_df, delta_folded)
+     pilot, w, chain_unit)
   gc()
   
   return(NULL)

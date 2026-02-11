@@ -45,7 +45,7 @@ for (i in 1:length(families)) {
   mean_df_abs <- as.data.frame(lapply(mean_df, abs))
   
   # get empirical mean for the current family
-  emp_sub <- emp_means[emp_means$Family == names(families)[1],]
+  emp_sub <- emp_means[emp_means$Family == names(families)[i],]
   
   par(mfrow=c(2,2), mar=c(4,4,3,1))
   
