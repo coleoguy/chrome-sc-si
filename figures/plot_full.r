@@ -1,13 +1,14 @@
 # *Author*    Megan Copeland, Heath Blackmon
 # *Purpose*   Aggregate MCMC runs per family, sample post-burn, then plot each family manually (fusion, fission, wgd, demi)
 # *Inputs*    ../results/{aster_full, brass_full, sol_full, fab_full}/*_rep#.csv
+  # or ../pruned.tr_results/{aster_full, brass_full, sol_full, fab_full}/*_rep#.csv
 
 library(coda)
-
+set.seed(123)
 # =========================
 # Config
 # =========================
-base_dir   <- "../results/"
+base_dir   <- "../pruned.tr_results/"
 dirs       <- c("aster","brass","sol","fab")
 fam_labels <- c("Asteraceae","Brassicaceae","Solanaceae","Fabaceae")
 
@@ -17,15 +18,13 @@ param_pairs <- list(
   fusion  = c("desc1","desc2"),
   fission = c("asc1","asc2"),
   wgd     = c("pol1","pol2"),
-  demi    = c("dem1","dem2")
-)
+  demi    = c("dem1","dem2"))
 
 cols <- c(
   fusion  = rgb(228,26,28,125, maxColorValue=255),
   fission = rgb(55,126,184,125, maxColorValue=255),
   wgd     = rgb(77,175,74,125, maxColorValue=255),
-  demi    = rgb(152,78,163,125, maxColorValue=255)
-)
+  demi    = rgb(152,78,163,125, maxColorValue=255))
 
 # Store results per family
 res_list    <- list()
@@ -41,18 +40,12 @@ for(i in 1:length(dirs)) {
   res_dir <- file.path(base_dir, dirs[i])
   files   <- list.files(res_dir, pattern="_rep\\d+\\.csv$", full.names=TRUE)
   
-  if(length(files) == 0) {
-    cat("No files found for", family, "\n")
-    next
-  }
-  
   res         <- data.frame()
   tran12_vals <- numeric(0)  # NEW: to store sampled tran12 for this family
   
   for(f in files) {
     chain <- read.csv(f, check.names=FALSE)
     n <- nrow(chain)
-    if(n < 2) next
     
     # Drop burn-in
     post_idx <- (floor(n/2) + 1):n
@@ -101,22 +94,20 @@ for(i in 1:length(dirs)) {
   # Console summary
   cat("\nFamily:", family, "| Files processed:", length(files), "\n")
   
-  if (length(tran12_vals) > 0) {
-    cat(sprintf("  tran12      n=%d, mean=%.5f\n",
-                length(tran12_vals),
-                mean(tran12_vals, na.rm=TRUE)))
-  }
-  
-  if (ncol(res) > 0) {
-    for(nm in colnames(res)) {
-      cat(sprintf("%-10s  n=%d,  P(Δ>0)=%.3f,  HPD=[%.5f, %.5f]\n",
-                  nm,
-                  sum(!is.na(res[[nm]])),
-                  mean(res[[nm]] > 0, na.rm=TRUE),
-                  ci[nm,1], ci[nm,2]))
-    }
-  }
+  cat(sprintf("  tran12      n=%d, mean=%.5f\n",
+              length(tran12_vals),
+               mean(tran12_vals, na.rm=TRUE)))
 }
+  
+  for(nm in colnames(res)) {
+    cat(sprintf("%-10s  n=%d,  P(Δ>0)=%.3f,  HPD=[%.5f, %.5f]\n",
+              nm,
+              sum(!is.na(res[[nm]])),
+              mean(res[[nm]] > 0, na.rm=TRUE),
+              ci[nm,1], ci[nm,2]))
+}
+
+
 
 # =========================
 # Plot families individually (manual tweaking here)
@@ -137,7 +128,7 @@ plot(NA,
      xlim=c(-0.1, 0.2),    # keep your manual xlims
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Asteraceae",
-     xlab=expression(Delta[r]~"rate statistic"),
+     xlab=expression(Delta[r]~"(SC - SI rate)"),
      ylab="Density")
 
 abline(v=0, lty=2, lwd=2)
@@ -174,7 +165,7 @@ plot(NA,
      xlim=c(-0.015, 0.025),    # your manual xlim
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Fabaceae",
-     xlab=expression(Delta[r]~"rate statistic"),
+     xlab=expression(Delta[r]~"(SC - SI rate)"),
      ylab="Density")
 abline(v=0, lty=2, lwd=2)
 
@@ -207,7 +198,7 @@ plot(NA,
      xlim=c(-0.05, 0.11),    # your manual xlim
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Brassicaceae",
-     xlab=expression(Delta[r]~"rate statistic"),
+     xlab=expression(Delta[r]~"(SC - SI rate)"),
      ylab="Density")
 abline(v=0, lty=2, lwd=2)
 
@@ -240,7 +231,7 @@ plot(NA,
      xlim=c(-0.05, 0.054),    # your manual xlim
      ylim=c(-0.12 * n_params * y_max, 1.05 * y_max),
      main="Solanaceae",
-     xlab=expression(Delta[r]~"rate statistic"),
+     xlab=expression(Delta[r]~"(SC - SI rate)"),
      ylab="Density")
 abline(v=0, lty=2, lwd=2)
 

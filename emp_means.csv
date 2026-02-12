@@ -1,0 +1,17 @@
+"Family","Transition","MeanDeltaR"
+"Asteraceae","fusion",0.0251678319854214
+"Asteraceae","fission",-0.0151557145443806
+"Asteraceae","wgd",0.0260186515307473
+"Asteraceae","demi",0.032355768070165
+"Brassicaceae","fusion",0.00885015066186506
+"Brassicaceae","fission",0.00405854830920314
+"Brassicaceae","wgd",0.062483099110129
+"Brassicaceae","demi",0.0195048184642648
+"Solanaceae","fusion",0.0100062709440141
+"Solanaceae","fission",0.000899915153092332
+"Solanaceae","wgd",0.0153117054913088
+"Solanaceae","demi",0.000612248220678383
+"Fabaceae","fusion",0.0102712253904832
+"Fabaceae","fission",-0.000418184584843248
+"Fabaceae","wgd",-0.00124802140088219
+"Fabaceae","demi",-0.00256852244710744
